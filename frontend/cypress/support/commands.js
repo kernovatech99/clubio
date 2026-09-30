@@ -3,6 +3,6 @@ Cypress.Commands.add('resetDb', () => {
     cy.task('db:reset');
 });
 
-Cypress.Commands.add('createUser', (email, password) => {
-    return cy.task('db:createUser', {email, password});
+Cypress.Commands.add('createUser', (user) => {
+    return cy.task('db:createUser', user);
 });

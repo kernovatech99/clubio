@@ -1,4 +1,5 @@
 import {createContext, useCallback, useContext, useMemo, useState} from 'react';
+import {apiFetch} from '../lib/api.js';
 
 const USER_KEY = 'clubio.user';
 
@@ -24,7 +25,7 @@ export function AuthProvider({children}) {
     const [user, setUser] = useState(loadUser);
 
     const login = useCallback(async (email, password) => {
-        const response = await fetch('/login', {
+        const response = await apiFetch('/login', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email, password}),
@@ -36,7 +37,7 @@ export function AuthProvider({children}) {
         }
 
         localStorage.setItem(USER_KEY, JSON.stringify(data));
-        setUser(data);
+        setUser(data.user);
     }, []);
 
     const logout = useCallback(() => {

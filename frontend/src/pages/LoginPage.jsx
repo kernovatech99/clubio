@@ -42,9 +42,9 @@ export default function LoginPage() {
                 <Card>
                     <h2 className="text-xl font-semibold text-white">Anmelden</h2>
 
-                    {errors && (
+                    {Object.keys(errors).length !== 0 && (
                         <Alert color="failure" onDismiss={() => setErrors({})}>
-                            {errors}
+                            {errors[Object.keys(errors)[0]].join(' ')}
                         </Alert>
                     )}
 
@@ -59,7 +59,6 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 color={errors.email ? 'failure' : undefined}
-                                helperText={errors.email?.join(' ')}
                                 required
                                 autoFocus
                             />
@@ -73,7 +72,6 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 color={errors.password ? 'failure' : undefined}
-                                helperText={errors.password?.join(' ')}
                                 required
                             />
                         </div>
