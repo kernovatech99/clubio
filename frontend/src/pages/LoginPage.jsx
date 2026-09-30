@@ -1,32 +1,32 @@
-import {Alert, Button, Card, Label, Spinner, TextInput} from 'flowbite-react';
+import {Button, Card, Label, Spinner, TextInput, Alert} from 'flowbite-react';
 import {useState} from 'react';
 import {Navigate, useNavigate} from 'react-router';
 import logo from '../assets/logo.svg';
-import {useAuth} from '../auth/AuthContext.jsx';
+import {useAuth, ValidationError} from '../auth/AuthContext.jsx';
 
 export default function LoginPage() {
-    const {key, login} = useAuth();
+    const {user, login} = useAuth();
     const navigate = useNavigate();
     const redirectTo = '/';
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);
+    const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
 
-    if (key !== null) {
+    if (user !== null) {
         return <Navigate to={redirectTo} replace />;
     }
 
     async function handleSubmit(event) {
         event.preventDefault();
-        setError(null);
+        setErrors({});
         setSubmitting(true);
         try {
             await login(email, password);
             navigate(redirectTo, {replace: true});
         } catch (err) {
-            setError(err.message);
+            setErrors(err instanceof ValidationError ? err.messages : {email: [err.message]});
         } finally {
             setSubmitting(false);
         }
@@ -42,20 +42,40 @@ export default function LoginPage() {
                 <Card>
                     <h2 className="text-xl font-semibold text-white">Anmelden</h2>
 
-                    {error && (
-                        <Alert color="failure" onDismiss={() => setError(null)}>
-                            {error}
+                    {errors && (
+                        <Alert color="failure" onDismiss={() => setErrors({})}>
+                            {errors}
                         </Alert>
                     )}
 
                     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="email">E-Mail-Adresse</Label>
-                            <TextInput id="email" type="email" autoComplete="email" placeholder="name@verein.de" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+                            <TextInput
+                                id="email"
+                                type="email"
+                                autoComplete="email"
+                                placeholder="name@verein.de"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                color={errors.email ? 'failure' : undefined}
+                                helperText={errors.email?.join(' ')}
+                                required
+                                autoFocus
+                            />
                         </div>
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="password">Passwort</Label>
-                            <TextInput id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                            <TextInput
+                                id="password"
+                                type="password"
+                                autoComplete="current-password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                color={errors.password ? 'failure' : undefined}
+                                helperText={errors.password?.join(' ')}
+                                required
+                            />
                         </div>
                         <Button type="submit" disabled={submitting} className="mt-2">
                             {submitting && <Spinner size="sm" className="me-2" light />}

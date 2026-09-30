@@ -1,27 +1,35 @@
 {
-  "name": "wbs-node-ts-template",
-  "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "license": "ISC",
-  "author": "",
-  "type": "module",
-  "main": "dist/app.js",
-  "imports": {
-    "#utils": {
-      "development": "./src/utils/index.ts",
-      "default": "./dist/utils/index.js"
+    "name": "wbs-node-ts-template",
+    "version": "1.0.0",
+    "description": "",
+    "keywords": [],
+    "license": "ISC",
+    "author": "",
+    "type": "module",
+    "main": "dist/app.js",
+    "imports": {
+        "#utils": {
+            "development": "./src/utils/index.ts",
+            "default": "./dist/utils/index.js"
+        }
+    },
+    "scripts": {
+        "dev": "node --watch --env-file-if-exists=.env --conditions development src/app.ts",
+        "prebuild": "rm -rf dist",
+        "build": "tsc",
+        "prestart": "npm run build",
+        "start": "node --env-file-if-exists=.env dist/app.js",
+        "dev:test": "node --env-file-if-exists=.env.test --conditions development src/app.ts"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.6",
+        "@types/node": "^24.13.3",
+        "typescript": "^7.0.2"
+    },
+    "dependencies": {
+        "bcryptjs": "^3.0.3",
+        "express": "^5.2.1",
+        "mongoose": "^9.10.3",
+        "zod": "^4.6.5"
     }
-  },
-  "scripts": {
-    "dev": "node --watch --conditions development src/app.ts",
-    "prebuild": "rm -rf dist",
-    "build": "tsc",
-    "prestart": "npm run build",
-    "start": "node dist/app.js"
-  },
-  "devDependencies": {
-    "@types/node": "^24.13.3",
-    "typescript": "^7.0.2"
-  }
 }
