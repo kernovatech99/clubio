@@ -1,21 +1,20 @@
 import {Alert, Button, Card, Label, Spinner, TextInput} from 'flowbite-react';
 import {useState} from 'react';
-import {Navigate, useLocation, useNavigate} from 'react-router';
+import {Navigate, useNavigate} from 'react-router';
 import logo from '../assets/logo.svg';
 import {useAuth} from '../auth/AuthContext.jsx';
 
 export default function LoginPage() {
-    const {user, login} = useAuth();
+    const {key, login} = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
-    const redirectTo = location.state?.from?.pathname ?? '/';
+    const redirectTo = '/';
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
-    if (user) {
+    if (key !== null) {
         return <Navigate to={redirectTo} replace />;
     }
 
