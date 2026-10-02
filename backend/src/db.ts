@@ -1,7 +1,10 @@
-import mongoose from 'mongoose';
+import {MikroORM} from '@mikro-orm/mariadb';
+import config from './mikro-orm.config.ts';
 import {env} from './env.ts';
 
+export const orm = new MikroORM(config);
+
 export async function connectDb() {
-    await mongoose.connect(env.MONGODB_URI);
-    console.log(`Connected to MongoDB: ${mongoose.connection.name}`);
+    await orm.connect();
+    console.log(`Connected to MariaDB: ${env.DB_NAME}`);
 }

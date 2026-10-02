@@ -1,32 +1,36 @@
+import {defineEntity, p, type EventArgs} from '@mikro-orm/core';
 import bcrypt from 'bcryptjs';
-import {Schema, model} from 'mongoose';
 
-const userSchema = new Schema(
-    {
-        name: {type: String, required: true, trim: true},
-        email: {type: String, required: true, unique: true, lowercase: true, trim: true},
-        password: {type: String, required: true, select: false},
-    },
-    {
-        timestamps: true,
-        toJSON: {
-            transform(_doc, ret: Record<string, unknown>) {
-                delete ret.password;
-                delete ret.__v;
-                return ret;
-            },
-        },
-    },
-);
-
-userSchema.pre('save', async function () {
-    if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 12);
+async function hashPassword({entity, changeSet}: EventArgs<{password: string}>) {
+    if (changeSet?.payload.password !== undefined) {
+        entity.password = await bcrypt.hash(entity.password, 12);
     }
+}
+
+export const UserSchema = defineEntity({
+    name: 'User',
+    tableName: 'users',
+    properties: {
+        id: p.integer().primary(),
+        name: p.string(),
+        email: p.string().unique(),
+        password: p.string().hidden(),
+        createdAt: p.datetime().onCreate(() => new Date()),
+        updatedAt: p
+            .datetime()
+            .onCreate(() => new Date())
+            .onUpdate(() => new Date()),
+    },
+    hooks: {
+        beforeCreate: [hashPassword],
+        beforeUpdate: [hashPassword],
+    },
 });
 
-userSchema.methods.checkPassword = function (plain: string) {
-    return bcrypt.compare(plain, this.password);
-};
+export class User extends UserSchema.class {
+    checkPassword(plain: string) {
+        return bcrypt.compare(plain, this.password);
+    }
+}
 
-export const User = model('User', userSchema);
+UserSchema.setClass(User);

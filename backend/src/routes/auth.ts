@@ -1,4 +1,5 @@
 import {Router} from 'express';
+import {orm} from '../db.ts';
 import {User} from '../models/User.ts';
 
 export const authRouter = Router();
@@ -21,7 +22,7 @@ authRouter.post('/login', async (req, res) => {
         return;
     }
 
-    const user = await User.findOne({email: email.toLowerCase().trim()}).select('+password');
+    const user = await orm.em.findOne(User, {email: email.toLowerCase().trim()});
 
     if (!user || !(await user.checkPassword(password))) {
         res.status(401).json({messages: {email: ['E-Mail-Adresse oder Passwort ist falsch.']}});
