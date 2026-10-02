@@ -1,34 +1,42 @@
-import bcrypt from 'bcryptjs';
-import {MongoClient} from 'mongodb';
-import {loadEnv} from 'vite';
-
-// Same .env.test the frontend test server uses; MONGODB_URI must point to the backend's test database
-const {MONGODB_URI} = loadEnv('test', process.cwd(), '');
-
-if (!MONGODB_URI) {
-    throw new Error('MONGODB_URI is not set in frontend/.env.test');
-}
-
-const client = new MongoClient(MONGODB_URI);
-
 export type NewUser = {name: string; email: string; password: string};
 
+// Reuses the backend's MikroORM setup and entities, so the tests hit the same test database and schema as the backend's `dev:test` server
+async function loadBackend() {
+    // Has to be loaded before the backend modules, they validate process.env on import
+    process.loadEnvFile(new URL('../../../backend/.env.test', import.meta.url));
+
+    const [{orm}, {User}] = await Promise.all([import('../../../backend/src/db.ts'), import('../../../backend/src/models/User.ts')]);
+
+    // Drops and recreates all tables once per run, so the schema always matches the entities
+    await orm.schema.refresh();
+
+    return {orm, User};
+}
+
+let backend: ReturnType<typeof loadBackend> | undefined;
+
+function getBackend() {
+    return (backend ??= loadBackend());
+}
+
 export const dbManager = {
-    // Empties all collections but keeps their indexes (e.g. unique email)
+    // Empties all tables but keeps the schema
     async reset() {
-        const collections = await client.db().collections();
-        await Promise.all(collections.map((collection) => collection.deleteMany({})));
+        const {orm} = await getBackend();
+        await orm.schema.clear();
         return null;
     },
 
-    async createUser({name, email, password}: NewUser) {
-        const now = new Date();
-        const user = {name, email: email.toLowerCase(), password: await bcrypt.hash(password, 4), createdAt: now, updatedAt: now};
-        const {insertedId} = await client.db().collection('users').insertOne(user);
-        return {_id: insertedId.toString(), name: user.name, email: user.email};
+    async createUser(data: NewUser) {
+        const {orm, User} = await getBackend();
+        const user = await orm.em.fork().getRepository(User).store(data);
+        return {id: user.id, name: user.name, email: user.email};
     },
 
-    close() {
-        return client.close();
+    async close() {
+        if (backend) {
+            const {orm} = await backend;
+            await orm.close();
+        }
     },
 };
