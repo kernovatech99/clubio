@@ -22,6 +22,7 @@ describe('Authentication', () => {
 
         cy.location('pathname').should('eq', '/');
         cy.contains(user.name).should('be.visible');
+        cy.contains('Buchungen').should('be.visible');
     });
 
     it('shows an error for a wrong password', () => {

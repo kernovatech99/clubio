@@ -4,11 +4,10 @@ import {User} from '../models/User.ts';
 const email = 'test@test.de';
 const password = 'secret';
 
-const em = orm.em.fork();
+const users = orm.em.fork().getRepository(User);
 
-if (!(await em.findOne(User, {email}))) {
-    em.create(User, {name: 'Max Muster', email, password});
-    await em.flush();
+if (!(await users.findByEmail(email))) {
+    await users.store({name: 'Max Muster', email, password});
 }
 
 await orm.close();

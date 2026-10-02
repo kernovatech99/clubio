@@ -22,7 +22,7 @@ authRouter.post('/login', async (req, res) => {
         return;
     }
 
-    const user = await orm.em.findOne(User, {email: email.toLowerCase().trim()});
+    const user = await orm.em.getRepository(User).findByEmail(email);
 
     if (!user || !(await user.checkPassword(password))) {
         res.status(401).json({messages: {email: ['E-Mail-Adresse oder Passwort ist falsch.']}});
