@@ -1,10 +1,14 @@
 import {z} from 'zod';
 
 const envSchema = z.object({
-    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    PORT: z.coerce.number().int().positive().default(3000),
-    MONGODB_URI: z.url(),
-    CORS_ORIGIN: z.string().default('http://localhost:5173'),
+    NODE_ENV: z.enum(['development', 'production', 'test']),
+    PORT: z.coerce.number().int().positive(),
+    CORS_ORIGIN: z.string(),
+    DB_HOST: z.ipv4(),
+    DB_USER: z.string(),
+    DB_PASSWORD: z.string(),
+    DB_NAME: z.string(),
+    DB_PORT: z.coerce.number().int().positive().min(1).max(65535),
 });
 
 const result = envSchema.parse(process.env);

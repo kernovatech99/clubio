@@ -19,19 +19,24 @@
         "build": "tsc",
         "prestart": "npm run build",
         "start": "node --env-file-if-exists=.env dist/app.js",
-        "dev:test": "node --env-file-if-exists=.env.test --conditions development src/app.ts"
+        "dev:test": "node --env-file-if-exists=.env.test --conditions development src/app.ts",
+        "user:test": "node --env-file-if-exists=.env --conditions development src/commands/create-test-user.ts"
     },
     "devDependencies": {
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.6",
         "@types/node": "^24.13.3",
-        "typescript": "^7.0.2"
+        "drizzle-kit": "^0.31.11",
+        "typescript": "^6.0"
     },
     "dependencies": {
         "bcryptjs": "^3.0.3",
         "cors": "^2.8.6",
+        "dotenv": "^18.0.5",
+        "drizzle-orm": "^0.45.3",
         "express": "^5.2.1",
-        "mongoose": "^9.10.3",
+        "mysql2": "^3.24.5",
+        "prettier": "^3.9.9",
         "zod": "^4.6.5"
     }
 }

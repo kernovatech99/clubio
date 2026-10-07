@@ -1,0 +1,15 @@
+import {datetime, int, mysqlTable, varchar} from 'drizzle-orm/mysql-core';
+
+export const users = mysqlTable('user', {
+    id: int().autoincrement().primaryKey(),
+    name: varchar({length: 255}).notNull(),
+    email: varchar({length: 255}).notNull().unique(),
+    password: varchar({length: 255}).notNull(),
+    createdAt: datetime('created_at')
+        .notNull()
+        .$defaultFn(() => new Date()),
+    updatedAt: datetime('updated_at')
+        .notNull()
+        .$defaultFn(() => new Date())
+        .$onUpdateFn(() => new Date()),
+});
