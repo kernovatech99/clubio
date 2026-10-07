@@ -8,6 +8,7 @@ export default defineConfig({
             on('task', {
                 'db:reset': async () => await dbManager.reset(),
                 'db:createUser': async (user) => await dbManager.createUser(user),
+                'db:createBook': async (book) => await dbManager.createBook(book),
             });
             on('after:run', () => dbManager.close());
         },

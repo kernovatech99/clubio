@@ -13,3 +13,16 @@ export const users = mysqlTable('user', {
         .$defaultFn(() => new Date())
         .$onUpdateFn(() => new Date()),
 });
+
+export const books = mysqlTable('book', {
+    id: int().autoincrement().primaryKey(),
+    name: varchar({length: 255}).notNull().unique(),
+    color: varchar({length: 255}).notNull().unique(),
+    createdAt: datetime('created_at')
+        .notNull()
+        .$defaultFn(() => new Date()),
+    updatedAt: datetime('updated_at')
+        .notNull()
+        .$defaultFn(() => new Date())
+        .$onUpdateFn(() => new Date()),
+});

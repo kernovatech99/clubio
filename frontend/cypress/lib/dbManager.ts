@@ -16,4 +16,9 @@ export const dbManager = {
         const {userRepository} = await import('../../../backend/src/models/User.ts');
         return await userRepository.store(values);
     },
+
+    async createBook(values: any) {
+        const {bookRepository} = await import('../../../backend/src/models/Book.ts');
+        return await bookRepository.store(values);
+    },
 };

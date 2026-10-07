@@ -8,6 +8,13 @@
       "when": 1791383141734,
       "tag": "0000_red_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1791396943011,
+      "tag": "0001_dizzy_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }
