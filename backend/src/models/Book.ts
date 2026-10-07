@@ -16,6 +16,18 @@ export const bookRepository = {
         return book;
     },
 
+    async findByColor(color: string): Promise<Book | undefined> {
+        const [book] = await db.select().from(books).where(eq(books.color, color));
+
+        return book;
+    },
+
+    async findByName(name: string): Promise<Book | undefined> {
+        const [book] = await db.select().from(books).where(eq(books.name, name));
+
+        return book;
+    },
+
     async store(data: NewBook): Promise<Book> {
         const [inserted] = await db.insert(books).values(data).$returningId();
 

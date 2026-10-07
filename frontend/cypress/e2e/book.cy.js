@@ -2,6 +2,27 @@ function rows() {
     return cy.get('tbody tr');
 }
 
+function typeForm(name, color) {
+    cy.get('#name').clear();
+    if (name) cy.get('#name').type(name);
+    if (color) {
+        cy.get('#color').click();
+        cy.get(`[data-cy="${color}"]`).click();
+    } else {
+        cy.get('#color').clear();
+        cy.get('#color').blur();
+    }
+}
+
+function sendForm(name, color) {
+    typeForm(name, color);
+    cy.contains('Speichern').click();
+}
+
+function assertEditingSucceeded() {
+    cy.contains('Speichern').should('not.exist');
+}
+
 describe('Books', () => {
     beforeEach(() => {
         cy.login();
@@ -25,28 +46,58 @@ describe('Books', () => {
         cy.contains('Neu').click();
         cy.contains('Speichern').click();
         cy.contains('Name muss vorhanden sein').should('be.visible');
-
-        cy.get('#name').type('Pfadi-Kasse');
-        cy.contains('Speichern').click();
         cy.contains('Farbe muss vorhanden sein').should('be.visible');
 
-        cy.get('#color').type('green-800');
-        cy.contains('Speichern').click();
+        sendForm('Girokonto', 'green-600');
+        cy.contains('Name ist schon vorhanden').should('be.visible');
+        cy.contains('Farbe ist schon vorhanden').should('be.visible');
+
+        sendForm('Pfadi-Kasse', 'green-800');
 
         cy.contains('Pfadi-Kasse').should('be.visible');
         cy.get('.bg-green-800').should('be.visible');
+        assertEditingSucceeded();
     });
 
-    it('edits a book', () => {
+    it('clears errors', () => {
+        cy.contains('Neu').click();
+        sendForm('', '');
+        cy.get('[aria-label="Close"]').click();
+
+        cy.contains('Neu').click();
+        cy.contains('Name muss vorhanden sein').should('not.exist');
+        cy.contains('Farbe muss vorhanden sein').should('not.exist');
+    });
+
+    it('edits a book to new values', () => {
         cy.contains('Aktionskonto').closest('tr').find('[title="Bearbeiten"]').click();
-        cy.get('#color').click();
-        cy.get('[data-cy="emerald-700"]').click();
-        cy.get('#name').clear().type('Rover-Kasse');
-        cy.contains('Speichern').click();
+        sendForm('Rover-Kasse', 'emerald-700');
         cy.contains('Rover-Kasse').should('be.visible');
         cy.get('.bg-emerald-700').should('be.visible');
         cy.contains('Aktionskonto').should('not.exist');
         cy.get('.bg-red-600').should('not.exist');
+        assertEditingSucceeded();
+    });
+
+    it('cannot edit a book to existing values', () => {
+        cy.contains('Aktionskonto').closest('tr').find('[title="Bearbeiten"]').click();
+        sendForm('Girokonto', 'green-600');
+        cy.contains('Name ist schon vorhanden').should('be.visible');
+        cy.contains('Farbe ist schon vorhanden').should('be.visible');
+    });
+
+    it('edits a book when nothing changes', () => {
+        cy.contains('Aktionskonto').closest('tr').find('[title="Bearbeiten"]').click();
+        cy.contains('Speichern').click();
+        cy.contains('Aktionskonto').should('be.visible');
+        assertEditingSucceeded();
+    });
+
+    it('validates editing of a book', () => {
+        cy.contains('Aktionskonto').closest('tr').find('[title="Bearbeiten"]').click();
+        sendForm('', '');
+        cy.contains('Name muss vorhanden sein').should('be.visible');
+        cy.contains('Farbe muss vorhanden sein').should('be.visible');
     });
 
     it('removes a book', () => {

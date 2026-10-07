@@ -51,14 +51,22 @@ export default function BookPage() {
         setModal(true);
     }
 
+    async function closeModal() {
+        setModal(false);
+        resetForm();
+        setErrors({});
+    }
+
     return (
         <div className="flex flex-col gap-4">
-            <Modal dismissible show={modal} onClose={() => setModal(false)}>
+            <Modal dismissible show={modal} onClose={() => closeModal()}>
                 <ModalHeader>{form.id ? 'Kasse bearbeiten' : 'Neue Kasse'}</ModalHeader>
                 <ModalBody>
                     {Object.keys(errors).length !== 0 && (
                         <Alert color="failure" onDismiss={() => setErrors({})}>
-                            {errors[Object.keys(errors)[0]].join(' ')}
+                            {Object.keys(errors).map((key) => (
+                                <p key={key}>{errors[key].join(' ')}</p>
+                            ))}
                         </Alert>
                     )}
                     <form className="flex max-w-md flex-col gap-4">
