@@ -12,7 +12,6 @@ export const useInputValidation = async (req, res, next) => {
             .min(5)
             .refine(async (name) => {
                 const books = await bookRepository.findByName(name);
-                console.log('books', books);
                 return !books || (req.params.id && books?.id === parseInt(req.params.id));
             }, 'Name ist schon vorhanden.'),
         color: z
