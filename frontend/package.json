@@ -13,6 +13,7 @@
         "test:e2e:open": "start-server-and-test \"npm --prefix ../backend run dev:test\" http://localhost:3001/health \"npm run dev:test\" http://localhost:5174 \"cypress open\""
     },
     "dependencies": {
+        "@floating-ui/react": "^0.27.17",
         "@tailwindcss/vite": "^4.3.3",
         "cypress": "^16.1.1",
         "dotenv": "^18.0.6",

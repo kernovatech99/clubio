@@ -6,6 +6,7 @@ import {AuthProvider} from './auth/AuthContext.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
 import './index.css';
+import BookPage from './pages/BookPage.jsx';
 import EntryPage from './pages/EntryPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import PlaceholderPage from './pages/PlaceholderPage.jsx';
@@ -21,7 +22,7 @@ createRoot(document.getElementById('root')).render(
                         <Route element={<AppLayout />}>
                             <Route path="/" element={<EntryPage />} />
                             <Route path="/entry" element={<EntryPage />} />
-                            <Route path="/book" element={<PlaceholderPage title="Kassen" />} />
+                            <Route path="/book" element={<BookPage />} />
                             <Route path="/category" element={<PlaceholderPage title="Konten" />} />
                             <Route path="/unit" element={<PlaceholderPage title="Kostenstellen" />} />
                         </Route>
