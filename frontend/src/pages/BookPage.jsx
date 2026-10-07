@@ -5,10 +5,12 @@ import {apiFetch} from '../lib/api.js';
 import {TextInput} from '../components/TextInput.jsx';
 import {ColorInput} from '../components/ColorInput.jsx';
 import {ColorSwatch} from '../components/ColorSwatch.js';
+import {useDialog} from '../components/DialogContext.tsx';
 
 export default function BookPage() {
     const [books, setBooks] = useState(null);
     const [modal, setModal] = useState(false);
+    const {confirm} = useDialog();
 
     function resetForm() {
         setForm({name: '', color: ''});
@@ -42,6 +44,7 @@ export default function BookPage() {
     }
 
     async function deleteBook(id) {
+        await confirm('Kasse löschen', 'Möchten Sie diese Kasse wirklich löschen?');
         const res = await apiFetch(`/book/${id}`, {method: 'DELETE'});
         setBooks((await res.json()).data);
     }
