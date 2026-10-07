@@ -49,5 +49,5 @@
     */
         // Use "paths" only for TS/bundler aliases. For Node runtime aliases, prefer package.json "imports".
     },
-    "include": ["src", "db/schema.ts"] // TypeScript checks and compiles files inside src.
+    "include": ["src", "src/schema.ts"] // TypeScript checks and compiles files inside src.
 }

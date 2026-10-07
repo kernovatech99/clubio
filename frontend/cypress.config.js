@@ -6,8 +6,8 @@ export default defineConfig({
         baseUrl: 'http://localhost:5174',
         setupNodeEvents(on) {
             on('task', {
-                'db:reset': () => dbManager.reset(),
-                'db:createUser': (user) => dbManager.createUser(user),
+                'db:reset': async () => await dbManager.reset(),
+                'db:createUser': async (user) => await dbManager.createUser(user),
             });
             on('after:run', () => dbManager.close());
         },

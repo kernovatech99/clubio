@@ -1,32 +1,40 @@
+import {eq} from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import {Schema, model} from 'mongoose';
+import {db} from '../db.ts';
+import {users} from '../schema.ts';
 
-const userSchema = new Schema(
-    {
-        name: {type: String, required: true, trim: true},
-        email: {type: String, required: true, unique: true, lowercase: true, trim: true},
-        password: {type: String, required: true, select: false},
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+
+export const userRepository = {
+    async findById(id: number): Promise<User | undefined> {
+        const [user] = await db.select().from(users).where(eq(users.id, id));
+
+        return user;
     },
-    {
-        timestamps: true,
-        toJSON: {
-            transform(_doc, ret: Record<string, unknown>) {
-                delete ret.password;
-                delete ret.__v;
-                return ret;
-            },
-        },
+
+    async findByEmail(email: string): Promise<User | undefined> {
+        const [user] = await db.select().from(users).where(eq(users.email, email.toLowerCase().trim()));
+
+        return user;
     },
-);
 
-userSchema.pre('save', async function () {
-    if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 12);
-    }
-});
+    async store(data: NewUser): Promise<User> {
+        const password = await bcrypt.hash(data.password, 12);
+        const [inserted] = await db
+            .insert(users)
+            .values({...data, password})
+            .$returningId();
 
-userSchema.methods.checkPassword = function (plain: string) {
-    return bcrypt.compare(plain, this.password);
+        return (await this.findById(inserted!.id))!;
+    },
 };
 
-export const User = model('User', userSchema);
+export function checkPassword(user: User, plain: string) {
+    return bcrypt.compare(plain, user.password);
+}
+
+// Strips the fields that must never leave the backend
+export function serializeUser({password: _password, ...user}: User) {
+    return user;
+}

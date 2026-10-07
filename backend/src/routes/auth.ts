@@ -1,5 +1,5 @@
 import {Router} from 'express';
-import {User} from '../models/User.ts';
+import {checkPassword, serializeUser, userRepository} from '../models/User.ts';
 
 export const authRouter = Router();
 
@@ -21,12 +21,12 @@ authRouter.post('/login', async (req, res) => {
         return;
     }
 
-    const user = await User.findOne({email: email.toLowerCase().trim()}).select('+password');
+    const user = await userRepository.findByEmail(email);
 
-    if (!user || !(await user.checkPassword(password))) {
+    if (!user || !(await checkPassword(user, password))) {
         res.status(401).json({messages: {email: ['E-Mail-Adresse oder Passwort ist falsch.']}});
         return;
     }
 
-    res.json({user});
+    res.json({user: serializeUser(user)});
 });
