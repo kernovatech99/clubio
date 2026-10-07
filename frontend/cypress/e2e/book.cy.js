@@ -23,9 +23,16 @@ describe('Books', () => {
 
     it('adds a new book', () => {
         cy.contains('Neu').click();
-        cy.get('#color').type('green-800');
+        cy.contains('Speichern').click();
+        cy.contains('Name muss vorhanden sein').should('be.visible');
+
         cy.get('#name').type('Pfadi-Kasse');
         cy.contains('Speichern').click();
+        cy.contains('Farbe muss vorhanden sein').should('be.visible');
+
+        cy.get('#color').type('green-800');
+        cy.contains('Speichern').click();
+
         cy.contains('Pfadi-Kasse').should('be.visible');
         cy.get('.bg-green-800').should('be.visible');
     });

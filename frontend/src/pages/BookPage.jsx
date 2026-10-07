@@ -1,4 +1,4 @@
-import {Button, ButtonGroup, Modal, ModalBody, ModalFooter, ModalHeader, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow} from 'flowbite-react';
+import {Alert, Button, ButtonGroup, Modal, ModalBody, ModalFooter, ModalHeader, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow} from 'flowbite-react';
 import {useEffect, useState} from 'react';
 import {MdAdd, MdDelete, MdEdit} from 'react-icons/md';
 import {apiFetch} from '../lib/api.js';
@@ -21,11 +21,21 @@ export default function BookPage() {
     }, []);
 
     const [form, setForm] = useState({name: '', color: ''});
+    const [errors, setErrors] = useState({});
 
     async function save() {
         const res = form.id
             ? await apiFetch(`/book/${form.id}`, {method: 'PUT', body: JSON.stringify(form), headers: {'Content-Type': 'application/json'}})
             : await apiFetch('/book', {method: 'POST', body: JSON.stringify(form), headers: {'Content-Type': 'application/json'}});
+
+        if (!res.ok) {
+            const error = await res.json();
+            if (error.fieldErrors) {
+                setErrors(error.fieldErrors);
+            }
+            return;
+        }
+
         setBooks((await res.json()).data);
         setModal(false);
         resetForm();
@@ -46,6 +56,11 @@ export default function BookPage() {
             <Modal dismissible show={modal} onClose={() => setModal(false)}>
                 <ModalHeader>{form.id ? 'Kasse bearbeiten' : 'Neue Kasse'}</ModalHeader>
                 <ModalBody>
+                    {Object.keys(errors).length !== 0 && (
+                        <Alert color="failure" onDismiss={() => setErrors({})}>
+                            {errors[Object.keys(errors)[0]].join(' ')}
+                        </Alert>
+                    )}
                     <form className="flex max-w-md flex-col gap-4">
                         <TextInput id="name" label="Name" required value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} />
                         <ColorInput id="color" label="Farbe" required value={form.color} onChange={(color) => setForm({...form, color})} />
