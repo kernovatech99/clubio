@@ -1,5 +1,3 @@
-// The entry page still renders its built-in dummy data, so the expectations below mirror `books` in EntryPage.jsx
-
 function openBook(name) {
     cy.contains('[role=tab]', name).click();
 }
@@ -21,6 +19,9 @@ function filterEntries(text) {
 describe('Entries', () => {
     beforeEach(() => {
         cy.login();
+        cy.createBook({name: 'Girokonto', color: 'green-600'});
+        cy.createBook({name: 'Barkasse', color: 'red-600'});
+        cy.createBook({name: 'Aktions-Kasse', color: 'blue-600'});
         cy.visit('/entry');
     });
 
@@ -28,6 +29,20 @@ describe('Entries', () => {
         cy.contains('Buchungen').should('be.visible');
         cy.get('[role=tab]').should('have.length', 3);
         cy.contains('[role=tab]', 'Girokonto').should('have.attr', 'aria-selected', 'true');
+    });
+
+    it('loads the tabs from the available kassen', () => {
+        cy.visit('/entry');
+
+        cy.get('[role=tab]').should('have.length', 3);
+        ['Aktions-Kasse', 'Barkasse', 'Girokonto'].forEach((name, index) => {
+            cy.get('[role=tab]').eq(index).should('have.text', name);
+        });
+        cy.get('[role=tab]').first().should('have.attr', 'aria-selected', 'true');
+
+        openBook('Pfadi-Kasse');
+        rows().should('have.length', 1);
+        rows().first().should('have.text', 'Keine Buchungen gefunden.');
     });
 
     it('can click the tabs and navigate through kassen', () => {
@@ -61,7 +76,9 @@ describe('Entries', () => {
                 cy.contains('Miete Vereinsheim Oktober').should('be.visible');
                 cy.contains('Vereinsheim').should('be.visible');
                 cy.contains('td', /^Miete$/).should('be.visible');
-                cy.contains(/^-450,00\s€$/).should('be.visible').and('have.class', 'text-red-400');
+                cy.contains(/^-450,00\s€$/)
+                    .should('be.visible')
+                    .and('have.class', 'text-red-400');
             });
 
         rows()
@@ -70,7 +87,9 @@ describe('Entries', () => {
                 cy.get('[aria-label="Nicht geprüft"]').should('be.visible');
                 cy.contains('18.09.2026').should('be.visible');
                 cy.contains('Spende Familie Becker').should('be.visible');
-                cy.contains(/^100,00\s€$/).should('be.visible').and('have.class', 'text-green-400');
+                cy.contains(/^100,00\s€$/)
+                    .should('be.visible')
+                    .and('have.class', 'text-green-400');
             });
 
         rows()
@@ -164,7 +183,9 @@ describe('Entries', () => {
             cy.contains('th', 'Kostenstelle').should('not.exist');
 
             cy.get('#overview-unit').should('have.value', 'Allgemein');
-            cy.contains(/^1\.861,11\s€$/).should('be.visible').and('have.class', 'text-green-400');
+            cy.contains(/^1\.861,11\s€$/)
+                .should('be.visible')
+                .and('have.class', 'text-green-400');
             cy.get('tbody tr').should('have.length', 9);
             cy.get('tbody tr').first().should('contain', 'Briefmarken');
 

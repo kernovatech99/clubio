@@ -1,9 +1,11 @@
 import {Badge, Button, Label, Modal, ModalBody, ModalHeader, Pagination, Select, TabItem, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow, Tabs, TextInput} from 'flowbite-react';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {MdAdd, MdCheck, MdSearch} from 'react-icons/md';
+import {apiFetch} from '../lib/api.js';
 
 // Dummy-Daten, bis das Backend Buchungen liefert. Beträge in Cent.
-const books = [
+// Die Kassen selbst kommen aus dem Backend, die Buchungen werden über den Namen der Kasse zugeordnet.
+const dummyBooks = [
     {
         id: 'giro',
         name: 'Girokonto',
@@ -58,7 +60,7 @@ const books = [
 const unitColors = ['blue', 'purple', 'yellow', 'pink', 'teal', 'indigo', 'lime', 'cyan'];
 
 // Jede Kostenstelle bekommt über alle Kassen hinweg dieselbe Farbe.
-const units = [...new Set(books.flatMap((book) => book.entries.map((entry) => entry.unit)))];
+const units = [...new Set(dummyBooks.flatMap((book) => book.entries.map((entry) => entry.unit)))];
 const unitColor = Object.fromEntries(units.map((unit, index) => [unit, unitColors[index % unitColors.length]]));
 
 const currency = new Intl.NumberFormat('de-DE', {style: 'currency', currency: 'EUR'});
@@ -177,9 +179,13 @@ function BookEntries({entries}) {
     );
 }
 
+function entriesOf(book) {
+    return dummyBooks.find((dummy) => dummy.name === book.name)?.entries ?? [];
+}
+
 function UnitOverview({show, onClose}) {
     const [unit, setUnit] = useState(units[0]);
-    const entries = books.flatMap((book) => book.entries).filter((entry) => entry.unit === unit);
+    const entries = dummyBooks.flatMap((book) => book.entries).filter((entry) => entry.unit === unit);
     const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
     return (
@@ -211,17 +217,27 @@ function UnitOverview({show, onClose}) {
 }
 
 export default function EntryPage() {
+    const [books, setBooks] = useState(null);
     const [overviewOpen, setOverviewOpen] = useState(false);
+
+    useEffect(() => {
+        apiFetch('/book')
+            .then((response) => (response.ok ? response.json() : Promise.reject(response)))
+            .then((data) => setBooks(data.data));
+    }, []);
 
     return (
         <div className="relative">
-            <Tabs aria-label="Kassen" variant="underline">
-                {books.map((book) => (
-                    <TabItem key={book.id} title={book.name}>
-                        <BookEntries entries={book.entries} />
-                    </TabItem>
-                ))}
-            </Tabs>
+            {books?.length > 0 && (
+                <Tabs aria-label="Kassen" variant="underline">
+                    {books.map((book) => (
+                        <TabItem key={book.id} title={book.name}>
+                            <BookEntries entries={entriesOf(book)} />
+                        </TabItem>
+                    ))}
+                </Tabs>
+            )}
+            {books?.length === 0 && <p className="py-3 pr-48 text-sm">Keine Kassen gefunden.</p>}
             <Button size="sm" color="alternative" className="absolute top-2 right-0" onClick={() => setOverviewOpen(true)}>
                 Kostenstellen-Übersicht
             </Button>
