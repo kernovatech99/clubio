@@ -1,6 +1,8 @@
 Cypress.Commands.add('resetDb', () => cy.task('db:reset'));
 Cypress.Commands.add('createUser', (user) => cy.task('db:createUser', user));
 Cypress.Commands.add('createBook', (book) => cy.task('db:createBook', book));
+Cypress.Commands.add('createCategory', (category) => cy.task('db:createCategory', category));
+Cypress.Commands.add('createUnit', (unit) => cy.task('db:createUnit', unit));
 
 Cypress.Commands.add('login', (user = {name: 'Max Mustermann', email: 'max@verein.de', password: 'geheim123'}) => {
     cy.createUser(user);

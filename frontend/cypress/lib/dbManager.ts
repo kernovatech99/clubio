@@ -1,6 +1,6 @@
 import child_process from 'node:child_process';
 import {loadEnvFile} from 'node:process';
-import {type NewUser} from '../../../backend/src/models/User.ts';
+import type {NewUser} from '../../../backend/src/models/User.ts';
 
 loadEnvFile('../backend/.env.test');
 const {dropAllTables} = await import('../../../backend/src/db.ts');
@@ -20,5 +20,15 @@ export const dbManager = {
     async createBook(values: any) {
         const {bookRepository} = await import('../../../backend/src/models/Book.ts');
         return await bookRepository.store(values);
+    },
+
+    async createCategory(values: any) {
+        const {categoryRepository} = await import('../../../backend/src/models/Category.ts');
+        return await categoryRepository.store(values);
+    },
+
+    async createUnit(values: any) {
+        const {unitRepository} = await import('../../../backend/src/models/Unit.ts');
+        return await unitRepository.store(values);
     },
 };

@@ -3,7 +3,7 @@ import {env} from './src/env';
 
 export default defineConfig({
     dialect: 'mysql',
-    schema: './db/schema.ts',
+    schema: './src/schema.ts',
     out: './db/migrations',
     dbCredentials: {
         host: env.DB_HOST,

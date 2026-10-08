@@ -9,6 +9,8 @@ export default defineConfig({
                 'db:reset': async () => await dbManager.reset(),
                 'db:createUser': async (user) => await dbManager.createUser(user),
                 'db:createBook': async (book) => await dbManager.createBook(book),
+                'db:createCategory': async (category) => await dbManager.createCategory(category),
+                'db:createUnit': async (unit) => await dbManager.createUnit(unit),
             });
             on('after:run', () => dbManager.close());
         },
