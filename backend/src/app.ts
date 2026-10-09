@@ -11,7 +11,8 @@ import {unitRouter} from './routes/unit.ts';
 const app = express();
 
 app.use(cors({origin: env.CORS_ORIGIN}));
-app.use(express.json());
+// Gescannte Belege werden als Data-URL im JSON übertragen
+app.use(express.json({limit: '20mb'}));
 
 app.get('/health', (_req, res) => {
     res.json({status: 'ok'});

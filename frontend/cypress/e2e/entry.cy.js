@@ -301,6 +301,48 @@ describe('Entries', () => {
             });
     });
 
+    it('scans a document and stores it with the new entry', () => {
+        cy.get('[aria-label="Beleg anzeigen"]').should('not.exist');
+
+        panel().contains('button', 'Neu').click();
+        cy.get('[aria-label="Beleg scannen"]').click();
+        cy.get('img[alt="Gescannter Beleg"]', {timeout: 60000}).should('be.visible');
+
+        sendForm({date: '2026-10-07', description: 'Kopierpapier', category: 'Bürobedarf', amount: '-8,99'});
+        assertEditingSucceeded();
+
+        cy.contains('Kopierpapier')
+            .closest('tr')
+            .find('[aria-label="Beleg anzeigen"]')
+            .should('have.attr', 'href')
+            .then((href) => {
+                cy.request({url: href, encoding: 'binary'}).then((response) => {
+                    expect(response.headers['content-type']).to.eq('image/jpeg');
+                    expect(response.body.length).to.be.greaterThan(1000);
+                });
+            });
+
+        // Beim Bearbeiten ohne neuen Scan bleibt der Beleg erhalten
+        cy.contains('Kopierpapier').closest('tr').find('[title="Bearbeiten"]').click();
+        cy.contains('Vorhandenen Beleg anzeigen').should('be.visible');
+        cy.contains('Speichern').click();
+        assertEditingSucceeded();
+        cy.contains('Kopierpapier').closest('tr').find('[aria-label="Beleg anzeigen"]').should('exist');
+    });
+
+    it('discards a scanned document', () => {
+        panel().contains('button', 'Neu').click();
+        cy.get('[aria-label="Beleg scannen"]').click();
+        cy.get('img[alt="Gescannter Beleg"]', {timeout: 60000}).should('be.visible');
+        cy.get('[title="Scan verwerfen"]').click();
+        cy.get('img[alt="Gescannter Beleg"]').should('not.exist');
+
+        sendForm({date: '2026-10-07', description: 'Kopierpapier', category: 'Bürobedarf', amount: '-8,99'});
+        assertEditingSucceeded();
+        cy.contains('Kopierpapier').should('be.visible');
+        cy.get('[aria-label="Beleg anzeigen"]').should('not.exist');
+    });
+
     it('clears errors and the form', () => {
         panel().contains('button', 'Neu').click();
         sendForm({description: 'Halbfertig'});

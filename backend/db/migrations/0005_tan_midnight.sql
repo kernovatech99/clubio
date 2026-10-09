@@ -1,0 +1,1 @@
+ALTER TABLE `entry` ADD `document` varchar(255);

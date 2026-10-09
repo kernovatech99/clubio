@@ -68,6 +68,8 @@ export const entries = mysqlTable('entry', {
     amount: int().notNull(),
     receiptNumber: varchar('receipt_number', {length: 255}),
     reviewed: boolean().notNull().default(false),
+    // Dateiname des gescannten Belegs im Storage
+    document: varchar({length: 255}),
     createdAt: datetime('created_at')
         .notNull()
         .$defaultFn(() => new Date()),

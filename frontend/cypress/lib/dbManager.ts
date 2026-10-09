@@ -12,6 +12,8 @@ export const dbManager = {
 
     async reset() {
         await dropAllTables();
+        const {documentStorage} = await import('../../../backend/src/storage.ts');
+        await documentStorage.clear();
         child_process.execSync('cd ../backend && node --env-file-if-exists=.env.test ./node_modules/.bin/drizzle-kit migrate');
         return 0;
     },

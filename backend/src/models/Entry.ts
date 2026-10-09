@@ -37,6 +37,7 @@ export const entryRepository = {
                 categoryId: data.categoryId,
                 amount: data.amount,
                 receiptNumber: data.receiptNumber,
+                document: data.document,
             })
             .where(eq(entries.id, id));
 

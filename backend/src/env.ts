@@ -9,6 +9,8 @@ const envSchema = z.object({
     DB_PASSWORD: z.string(),
     DB_NAME: z.string(),
     DB_PORT: z.coerce.number().int().positive().min(1).max(65535),
+    // Verzeichnis für gescannte Belege
+    STORAGE_PATH: z.string().default('storage'),
 });
 
 const result = envSchema.parse(process.env);

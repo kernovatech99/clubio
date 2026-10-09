@@ -9,6 +9,7 @@ import {
     ModalHeader,
     Pagination,
     Select,
+    Spinner,
     TabItem,
     Table,
     TableBody,
@@ -20,8 +21,9 @@ import {
     TextInput as FlowbiteTextInput,
 } from 'flowbite-react';
 import {useEffect, useState} from 'react';
-import {MdAdd, MdCheck, MdDelete, MdEdit, MdSearch} from 'react-icons/md';
-import {apiFetch} from '../lib/api.js';
+import {MdAdd, MdCheck, MdClose, MdDelete, MdDescription, MdDocumentScanner, MdEdit, MdSearch} from 'react-icons/md';
+import {apiFetch, apiUrl} from '../lib/api.js';
+import {scanDocument} from '../lib/scanner.js';
 import {SelectInput} from '../components/SelectInput.jsx';
 import {TextInput} from '../components/TextInput.jsx';
 import {useDialog} from '../components/DialogContext.tsx';
@@ -118,7 +120,23 @@ function EntryTable({entries, showUnit = true, alwaysPaginate = false, onEdit, o
                                     <ReviewedMark reviewed={entry.reviewed} onReview={onReview && (() => onReview(entry.id))} />
                                 </TableCell>
                                 <TableCell className="whitespace-nowrap tabular-nums">{formatDate(entry.date)}</TableCell>
-                                <TableCell className="font-medium text-white">{entry.description}</TableCell>
+                                <TableCell className="font-medium text-white">
+                                    <span className="flex items-center gap-2">
+                                        {entry.description}
+                                        {entry.document && (
+                                            <a
+                                                href={apiUrl(`/entry/${entry.id}/document`)}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                title="Beleg anzeigen"
+                                                aria-label="Beleg anzeigen"
+                                                className="text-gray-400 hover:text-white"
+                                            >
+                                                <MdDescription className="size-4" />
+                                            </a>
+                                        )}
+                                    </span>
+                                </TableCell>
                                 {showUnit && (
                                     <TableCell>
                                         {entry.unit && (
@@ -231,7 +249,7 @@ function UnitOverview({show, onClose, units, entries}) {
     );
 }
 
-const emptyForm = {date: '', description: '', bookId: null, unitId: '', categoryId: '', amount: '', receiptNumber: ''};
+const emptyForm = {date: '', description: '', bookId: null, unitId: '', categoryId: '', amount: '', receiptNumber: '', document: null, hasDocument: false};
 
 function fetchData(path) {
     return apiFetch(path)
@@ -248,6 +266,8 @@ export default function EntryPage() {
     const [modal, setModal] = useState(false);
     const [form, setForm] = useState(emptyForm);
     const [errors, setErrors] = useState({});
+    const [scanning, setScanning] = useState(false);
+    const [scanError, setScanError] = useState(null);
     const {confirm} = useDialog();
 
     useEffect(() => {
@@ -280,6 +300,8 @@ export default function EntryPage() {
             categoryId: entry.categoryId,
             amount: (entry.amount / 100).toFixed(2).replace('.', ','),
             receiptNumber: entry.receiptNumber ?? '',
+            document: null,
+            hasDocument: !!entry.document,
         });
         setModal(true);
     }
@@ -288,6 +310,20 @@ export default function EntryPage() {
         setModal(false);
         setForm(emptyForm);
         setErrors({});
+        setScanError(null);
+    }
+
+    async function scan() {
+        setScanning(true);
+        setScanError(null);
+        try {
+            const document = await scanDocument();
+            setForm((form) => ({...form, document}));
+        } catch (error) {
+            setScanError(error.message);
+        } finally {
+            setScanning(false);
+        }
     }
 
     async function save() {
@@ -299,6 +335,7 @@ export default function EntryPage() {
             categoryId: form.categoryId === '' ? null : Number(form.categoryId),
             amount: parseAmount(form.amount),
             receiptNumber: form.receiptNumber,
+            document: form.document,
         });
         const res = form.id
             ? await apiFetch(`/entry/${form.id}`, {method: 'PUT', body, headers: {'Content-Type': 'application/json'}})
@@ -367,6 +404,29 @@ export default function EntryPage() {
                             onChange={(e) => setForm({...form, amount: e.target.value})}
                         />
                         <TextInput id="receiptNumber" label="Quittungs-Nr" value={form.receiptNumber} onChange={(e) => setForm({...form, receiptNumber: e.target.value})} />
+                        <div>
+                            <Label className="mb-2 block">Beleg</Label>
+                            <div className="flex items-center gap-4">
+                                <Button color="alternative" onClick={() => scan()} disabled={scanning} title="Beleg scannen" aria-label="Beleg scannen">
+                                    {scanning ? <Spinner size="sm" aria-label="Scan läuft" /> : <MdDocumentScanner className="size-5" />}
+                                </Button>
+                                {scanning && <span className="text-sm text-gray-400">Scan läuft …</span>}
+                                {!scanning && !form.document && form.hasDocument && (
+                                    <a href={apiUrl(`/entry/${form.id}/document`)} target="_blank" rel="noreferrer" className="text-sm text-gray-400 underline hover:text-white">
+                                        Vorhandenen Beleg anzeigen
+                                    </a>
+                                )}
+                            </div>
+                            {scanError && <p className="mt-2 text-sm text-red-400">{scanError}</p>}
+                            {form.document && (
+                                <div className="relative mt-4 inline-block">
+                                    <img src={form.document} alt="Gescannter Beleg" className="max-h-64 rounded border border-gray-600" />
+                                    <Button size="xs" color="red" className="absolute top-2 right-2" onClick={() => setForm({...form, document: null})} title="Scan verwerfen">
+                                        <MdClose className="size-4" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     </form>
                 </ModalBody>
                 <ModalFooter>
