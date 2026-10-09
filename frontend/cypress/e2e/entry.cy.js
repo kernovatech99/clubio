@@ -11,6 +11,32 @@ function rows() {
     return panel().find('tbody tr');
 }
 
+function dialog() {
+    return cy.get('[role=dialog]');
+}
+
+function typeForm({date, description, unit, category, amount, receiptNumber}) {
+    cy.get('#date').clear();
+    if (date) cy.get('#date').type(date);
+    cy.get('#description').clear();
+    if (description) cy.get('#description').type(description);
+    cy.get('#unitId').select(unit ?? 'Keine Kostenstelle');
+    cy.get('#categoryId').select(category ?? 'Bitte wählen');
+    cy.get('#amount').clear();
+    if (amount) cy.get('#amount').type(amount);
+    cy.get('#receiptNumber').clear();
+    if (receiptNumber) cy.get('#receiptNumber').type(receiptNumber);
+}
+
+function sendForm(values) {
+    typeForm(values);
+    cy.contains('Speichern').click();
+}
+
+function assertEditingSucceeded() {
+    cy.contains('Speichern').should('not.exist');
+}
+
 function filterEntries(text) {
     panel().find('input[type=search]').clear();
     panel().find('input[type=search]').type(text);
@@ -22,7 +48,10 @@ describe('Entries', () => {
         cy.createBook({name: 'Girokonto', color: 'green-600'});
         cy.createBook({name: 'Barkasse', color: 'red-600'});
         cy.createBook({name: 'Aktions-Kasse', color: 'blue-600'});
+        cy.fixture('entries').then((entries) => cy.seedEntries(entries));
         cy.visit('/entry');
+        // Kassen sind alphabetisch sortiert, die meisten Tests arbeiten mit dem Girokonto
+        openBook('Girokonto');
     });
 
     it('sees the booking page', () => {
@@ -32,10 +61,11 @@ describe('Entries', () => {
     });
 
     it('loads the tabs from the available kassen', () => {
+        cy.createBook({name: 'Pfadi-Kasse', color: 'yellow-600'});
         cy.visit('/entry');
 
-        cy.get('[role=tab]').should('have.length', 3);
-        ['Aktions-Kasse', 'Barkasse', 'Girokonto'].forEach((name, index) => {
+        cy.get('[role=tab]').should('have.length', 4);
+        ['Aktions-Kasse', 'Barkasse', 'Girokonto', 'Pfadi-Kasse'].forEach((name, index) => {
             cy.get('[role=tab]').eq(index).should('have.text', name);
         });
         cy.get('[role=tab]').first().should('have.attr', 'aria-selected', 'true');
@@ -63,8 +93,8 @@ describe('Entries', () => {
     });
 
     it('lists the entries of a kasse with the newest first', () => {
-        panel().find('thead th').should('have.length', 6);
-        ['Geprüft', 'Datum', 'Beschreibung', 'Kostenstelle', 'Konto', 'Betrag'].forEach((heading, index) => {
+        panel().find('thead th').should('have.length', 7);
+        ['Geprüft', 'Datum', 'Beschreibung', 'Kostenstelle', 'Konto', 'Betrag', 'Aktionen'].forEach((heading, index) => {
             panel().find('thead th').eq(index).should('have.text', heading);
         });
 
@@ -74,7 +104,10 @@ describe('Entries', () => {
                 cy.get('[aria-label="Nicht geprüft"]').should('be.visible');
                 cy.contains('01.10.2026').should('be.visible');
                 cy.contains('Miete Vereinsheim Oktober').should('be.visible');
-                cy.contains('Vereinsheim').should('be.visible');
+                cy.contains('td', /^Vereinsheim$/)
+                    .should('be.visible')
+                    .find('.bg-teal-600')
+                    .should('be.visible');
                 cy.contains('td', /^Miete$/).should('be.visible');
                 cy.contains(/^-450,00\s€$/)
                     .should('be.visible')
@@ -181,8 +214,9 @@ describe('Entries', () => {
             cy.contains('Kostenstellen-Übersicht').should('be.visible');
             cy.get('thead th').should('have.length', 5);
             cy.contains('th', 'Kostenstelle').should('not.exist');
+            cy.contains('th', 'Aktionen').should('not.exist');
 
-            cy.get('#overview-unit').should('have.value', 'Allgemein');
+            cy.get('#overview-unit option:selected').should('have.text', 'Allgemein');
             cy.contains(/^1\.861,11\s€$/)
                 .should('be.visible')
                 .and('have.class', 'text-green-400');
@@ -204,5 +238,133 @@ describe('Entries', () => {
         });
 
         cy.get('[role=dialog]').should('not.exist');
+    });
+
+    it('adds a new entry', () => {
+        openBook('Barkasse');
+        panel().contains('button', 'Neu').click();
+        dialog().contains('Neue Buchung').should('be.visible');
+
+        sendForm({});
+        cy.contains('Datum muss vorhanden sein').should('be.visible');
+        cy.contains('Beschreibung muss vorhanden sein').should('be.visible');
+        cy.contains('Konto muss vorhanden sein').should('be.visible');
+        cy.contains('Betrag muss vorhanden sein').should('be.visible');
+
+        sendForm({date: '2026-10-05', description: 'Laternen basteln', unit: 'Gruppenstunden', category: 'Material', amount: '-12,50', receiptNumber: 'Q-2026-017'});
+        assertEditingSucceeded();
+
+        rows().should('have.length', 10);
+        rows()
+            .first()
+            .within(() => {
+                cy.get('[aria-label="Nicht geprüft"]').should('be.visible');
+                cy.contains('05.10.2026').should('be.visible');
+                cy.contains('Laternen basteln').should('be.visible');
+                cy.contains('td', /^Gruppenstunden$/).should('be.visible');
+                cy.contains('td', /^Material$/).should('be.visible');
+                cy.contains(/^-12,50\s€$/)
+                    .should('be.visible')
+                    .and('have.class', 'text-red-400');
+            });
+        panel()
+            .contains(/Kassenstand:\s53,22\s€/)
+            .should('be.visible');
+
+        // Die Buchung landet nur in der geöffneten Kasse und ist gespeichert
+        cy.visit('/entry');
+        cy.contains('Laternen basteln').should('not.be.visible');
+        openBook('Barkasse');
+        cy.contains('Laternen basteln').should('be.visible');
+    });
+
+    it('prefills the date of a new entry with today', () => {
+        cy.clock(new Date(2026, 9, 8, 12), ['Date']);
+        cy.visit('/entry');
+        panel().contains('button', 'Neu').click();
+        cy.get('#date').should('have.value', '2026-10-08');
+    });
+
+    it('adds an entry without kostenstelle and quittung', () => {
+        panel().contains('button', 'Neu').click();
+        sendForm({date: '2026-10-06', description: 'Erstattung Versicherung', category: 'Versicherungen', amount: '1.250,00'});
+        assertEditingSucceeded();
+
+        rows()
+            .first()
+            .within(() => {
+                cy.contains('Erstattung Versicherung').should('be.visible');
+                cy.get('td').eq(3).should('have.text', '');
+                cy.contains(/^1\.250,00\s€$/)
+                    .should('be.visible')
+                    .and('have.class', 'text-green-400');
+            });
+    });
+
+    it('clears errors and the form', () => {
+        panel().contains('button', 'Neu').click();
+        sendForm({description: 'Halbfertig'});
+        cy.contains('Konto muss vorhanden sein').should('be.visible');
+        cy.get('[aria-label="Close"]').click();
+
+        panel().contains('button', 'Neu').click();
+        cy.contains('Konto muss vorhanden sein').should('not.exist');
+        cy.get('#description').should('have.value', '');
+    });
+
+    it('edits an entry', () => {
+        cy.contains('Spende Familie Becker').closest('tr').find('[title="Bearbeiten"]').click();
+        dialog().contains('Buchung bearbeiten').should('be.visible');
+        cy.get('#date').should('have.value', '2026-09-18');
+        cy.get('#description').should('have.value', 'Spende Familie Becker');
+        cy.get('#unitId option:selected').should('have.text', 'Allgemein');
+        cy.get('#categoryId option:selected').should('have.text', 'Spenden');
+        cy.get('#amount').should('have.value', '100,00');
+        cy.get('#receiptNumber').should('have.value', '');
+
+        sendForm({date: '2026-09-19', description: 'Spende Familie Schmidt', unit: 'Sommerlager', category: 'Zuschüsse', amount: '150,00', receiptNumber: 'Q-42'});
+        assertEditingSucceeded();
+
+        cy.contains('Spende Familie Becker').should('not.exist');
+        cy.contains('Spende Familie Schmidt')
+            .closest('tr')
+            .within(() => {
+                cy.contains('19.09.2026').should('be.visible');
+                cy.contains('td', /^Sommerlager$/).should('be.visible');
+                cy.contains('td', /^Zuschüsse$/).should('be.visible');
+                cy.contains(/^150,00\s€$/).should('be.visible');
+            });
+        panel()
+            .contains(/Kassenstand:\s2\.662,40\s€/)
+            .should('be.visible');
+
+        cy.contains('Spende Familie Schmidt').closest('tr').find('[title="Bearbeiten"]').click();
+        cy.get('#receiptNumber').should('have.value', 'Q-42');
+    });
+
+    it('edits an entry when nothing changes', () => {
+        cy.contains('Spende Familie Becker').closest('tr').find('[title="Bearbeiten"]').click();
+        cy.contains('Speichern').click();
+        assertEditingSucceeded();
+        cy.contains('Spende Familie Becker').should('be.visible');
+        rows().eq(2).find('[aria-label="Geprüft"]').should('be.visible');
+    });
+
+    it('validates editing of an entry', () => {
+        cy.contains('Spende Familie Becker').closest('tr').find('[title="Bearbeiten"]').click();
+        sendForm({date: '2026-09-18', description: 'Spende Familie Becker', category: 'Spenden', amount: 'viel'});
+        cy.contains('Betrag muss vorhanden sein').should('be.visible');
+
+        sendForm({date: '2026-09-18', description: 'Spende Familie Becker', category: 'Spenden', amount: '0'});
+        cy.contains('Betrag darf nicht 0 sein').should('be.visible');
+    });
+
+    it('removes an entry', () => {
+        cy.contains('Spende Familie Becker').closest('tr').find('[title="Löschen"]').click();
+        cy.contains('button', 'Ja').click();
+        cy.contains('Spende Familie Becker').should('not.exist');
+        panel()
+            .contains(/Kassenstand:\s2\.512,40\s€/)
+            .should('be.visible');
     });
 });

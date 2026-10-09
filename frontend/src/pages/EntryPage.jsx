@@ -1,67 +1,30 @@
-import {Badge, Button, Label, Modal, ModalBody, ModalHeader, Pagination, Select, TabItem, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow, Tabs, TextInput} from 'flowbite-react';
+import {
+    Alert,
+    Button,
+    ButtonGroup,
+    Label,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
+    Pagination,
+    Select,
+    TabItem,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeadCell,
+    TableRow,
+    Tabs,
+    TextInput as FlowbiteTextInput,
+} from 'flowbite-react';
 import {useEffect, useState} from 'react';
-import {MdAdd, MdCheck, MdSearch} from 'react-icons/md';
+import {MdAdd, MdCheck, MdDelete, MdEdit, MdSearch} from 'react-icons/md';
 import {apiFetch} from '../lib/api.js';
-
-// Dummy-Daten, bis das Backend Buchungen liefert. Beträge in Cent.
-// Die Kassen selbst kommen aus dem Backend, die Buchungen werden über den Namen der Kasse zugeordnet.
-const dummyBooks = [
-    {
-        id: 'giro',
-        name: 'Girokonto',
-        entries: [
-            {id: 1, date: '2026-02-16', checked: true, description: 'Mitgliedsbeiträge 2026', unit: 'Allgemein', category: 'Mitgliedsbeiträge', amount: 184000},
-            {id: 2, date: '2026-10-01', checked: false, description: 'Miete Vereinsheim Oktober', unit: 'Vereinsheim', category: 'Miete', amount: -45000},
-            {id: 3, date: '2026-01-05', checked: true, description: 'Haftpflichtversicherung', unit: 'Allgemein', category: 'Versicherungen', amount: -21890},
-            {id: 4, date: '2026-06-12', checked: true, description: 'Zuschuss Stadtjugendring', unit: 'Sommerlager', category: 'Zuschüsse', amount: 60000},
-            {id: 5, date: '2026-04-20', checked: true, description: 'Anzahlung Zeltplatz', unit: 'Sommerlager', category: 'Unterkunft', amount: -35000},
-            {id: 6, date: '2026-09-18', checked: false, description: 'Spende Familie Becker', unit: 'Allgemein', category: 'Spenden', amount: 10000},
-            {id: 16, date: '2026-09-01', checked: true, description: 'Miete Vereinsheim September', unit: 'Vereinsheim', category: 'Miete', amount: -45000},
-            {id: 17, date: '2026-08-14', checked: true, description: 'Restzahlung Zeltplatz', unit: 'Sommerlager', category: 'Unterkunft', amount: -52000},
-            {id: 18, date: '2026-07-06', checked: true, description: 'Teilnehmerbeiträge Sommerlager', unit: 'Sommerlager', category: 'Teilnehmerbeiträge', amount: 216000},
-            {id: 19, date: '2026-03-09', checked: true, description: 'Stromabschlag Vereinsheim', unit: 'Vereinsheim', category: 'Nebenkosten', amount: -8400},
-            {id: 20, date: '2026-05-22', checked: true, description: 'Kontoführungsgebühren', unit: 'Allgemein', category: 'Bankgebühren', amount: -1470},
-        ],
-    },
-    {
-        id: 'cash',
-        name: 'Barkasse',
-        entries: [
-            {id: 7, date: '2026-09-23', checked: false, description: 'Bastelmaterial Gruppenstunde', unit: 'Gruppenstunden', category: 'Material', amount: -2349},
-            {id: 8, date: '2026-09-10', checked: false, description: 'Getränke Elternabend', unit: 'Allgemein', category: 'Verpflegung', amount: -1880},
-            {id: 9, date: '2026-09-01', checked: true, description: 'Einzahlung vom Girokonto', unit: 'Allgemein', category: 'Umbuchung', amount: 15000},
-            {id: 10, date: '2026-09-29', checked: false, description: 'Briefmarken', unit: 'Allgemein', category: 'Bürobedarf', amount: -850},
-            {id: 21, date: '2026-09-30', checked: false, description: 'Kekse und Saft Gruppenstunde', unit: 'Gruppenstunden', category: 'Verpflegung', amount: -1265},
-            {id: 22, date: '2026-09-16', checked: false, description: 'Schnitzmesser', unit: 'Gruppenstunden', category: 'Material', amount: -3490},
-            {id: 23, date: '2026-08-28', checked: true, description: 'Putzmittel', unit: 'Vereinsheim', category: 'Instandhaltung', amount: -1795},
-            {id: 24, date: '2026-08-21', checked: true, description: 'Spende Elternabend', unit: 'Allgemein', category: 'Spenden', amount: 4500},
-            {id: 25, date: '2026-06-03', checked: true, description: 'Druckerpapier', unit: 'Allgemein', category: 'Bürobedarf', amount: -1299},
-        ],
-    },
-    {
-        id: 'event',
-        name: 'Aktions-Kasse',
-        entries: [
-            {id: 11, date: '2026-07-25', checked: true, description: 'Teilnehmerbeiträge bar', unit: 'Sommerlager', category: 'Teilnehmerbeiträge', amount: 42000},
-            {id: 12, date: '2026-07-27', checked: true, description: 'Einkauf Lebensmittel', unit: 'Sommerlager', category: 'Verpflegung', amount: -31275},
-            {id: 13, date: '2026-07-27', checked: true, description: 'Gaskartuschen', unit: 'Sommerlager', category: 'Material', amount: -3960},
-            {id: 14, date: '2026-09-12', checked: false, description: 'Kuchenverkauf Stammesfest', unit: 'Stammesfest', category: 'Verkaufserlöse', amount: 18650},
-            {id: 15, date: '2026-07-30', checked: true, description: 'Eintritt Freibad', unit: 'Sommerlager', category: 'Ausflüge', amount: -9600},
-            {id: 26, date: '2026-09-12', checked: false, description: 'Getränkeverkauf Stammesfest', unit: 'Stammesfest', category: 'Verkaufserlöse', amount: 27400},
-            {id: 27, date: '2026-09-11', checked: false, description: 'Einkauf Getränke', unit: 'Stammesfest', category: 'Verpflegung', amount: -14280},
-            {id: 28, date: '2026-09-10', checked: false, description: 'Dekoration und Lichterketten', unit: 'Stammesfest', category: 'Material', amount: -4615},
-            {id: 29, date: '2026-08-02', checked: true, description: 'Eis für alle', unit: 'Sommerlager', category: 'Verpflegung', amount: -5850},
-            {id: 30, date: '2026-07-31', checked: true, description: 'Brennholz', unit: 'Sommerlager', category: 'Material', amount: -2500},
-        ],
-    },
-];
-
-// Ohne Rot/Grün, die sind für die Beträge reserviert.
-const unitColors = ['blue', 'purple', 'yellow', 'pink', 'teal', 'indigo', 'lime', 'cyan'];
-
-// Jede Kostenstelle bekommt über alle Kassen hinweg dieselbe Farbe.
-const units = [...new Set(dummyBooks.flatMap((book) => book.entries.map((entry) => entry.unit)))];
-const unitColor = Object.fromEntries(units.map((unit, index) => [unit, unitColors[index % unitColors.length]]));
+import {SelectInput} from '../components/SelectInput.jsx';
+import {TextInput} from '../components/TextInput.jsx';
+import {useDialog} from '../components/DialogContext.tsx';
 
 const currency = new Intl.NumberFormat('de-DE', {style: 'currency', currency: 'EUR'});
 
@@ -76,9 +39,21 @@ function formatDate(date) {
     return dateFormat.format(new Date(date));
 }
 
+function today() {
+    const now = new Date();
+    return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+}
+
+// Wandelt die Eingabe ("-1.234,50" oder "-1234.50") in Cent um. Liefert null, wenn die Eingabe keine Zahl ist.
+function parseAmount(input) {
+    const normalized = input.includes(',') ? input.replaceAll('.', '').replace(',', '.') : input;
+    const amount = Math.round(parseFloat(normalized.replace(/\s/g, '')) * 100);
+    return Number.isNaN(amount) ? null : amount;
+}
+
 function matches(entry, filter) {
     const needle = filter.trim().toLowerCase();
-    return [formatDate(entry.date), entry.description, entry.unit, entry.category, formatAmount(entry.amount)].some((value) => value.toLowerCase().includes(needle));
+    return [formatDate(entry.date), entry.description, entry.unit?.name ?? '', entry.category?.name ?? '', formatAmount(entry.amount)].some((value) => value.toLowerCase().includes(needle));
 }
 
 const pageSize = 10;
@@ -100,7 +75,9 @@ function CheckedMark({checked}) {
 }
 
 // Beim Wechsel der angezeigten Buchungen per key neu mounten, damit die Seite wieder auf 1 steht.
-function EntryTable({entries, showUnit = true, alwaysPaginate = false}) {
+function EntryTable({entries, showUnit = true, alwaysPaginate = false, onEdit, onDelete}) {
+    const showActions = !!onEdit;
+    const columns = 4 + (showUnit ? 1 : 0) + (showActions ? 1 : 0);
     const [page, setPage] = useState(1);
     const sorted = entries.toSorted((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
@@ -118,6 +95,7 @@ function EntryTable({entries, showUnit = true, alwaysPaginate = false}) {
                             {showUnit && <TableHeadCell>Kostenstelle</TableHeadCell>}
                             <TableHeadCell>Konto</TableHeadCell>
                             <TableHeadCell className="text-right">Betrag</TableHeadCell>
+                            {showActions && <TableHeadCell className="text-right">Aktionen</TableHeadCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -130,18 +108,33 @@ function EntryTable({entries, showUnit = true, alwaysPaginate = false}) {
                                 <TableCell className="font-medium text-white">{entry.description}</TableCell>
                                 {showUnit && (
                                     <TableCell>
-                                        <Badge color={unitColor[entry.unit]} className="w-fit whitespace-nowrap">
-                                            {entry.unit}
-                                        </Badge>
+                                        {entry.unit && (
+                                            <span className="flex items-center gap-2 whitespace-nowrap">
+                                                <span className={'block size-3 shrink-0 rounded-full bg-' + entry.unit.color} />
+                                                {entry.unit.name}
+                                            </span>
+                                        )}
                                     </TableCell>
                                 )}
-                                <TableCell>{entry.category}</TableCell>
+                                <TableCell>{entry.category?.name}</TableCell>
                                 <TableCell className={`text-right whitespace-nowrap tabular-nums ${amountColor(entry.amount)}`}>{formatAmount(entry.amount)}</TableCell>
+                                {showActions && (
+                                    <TableCell className="text-right">
+                                        <ButtonGroup>
+                                            <Button onClick={() => onEdit(entry)} size="xs" color="alternative" title="Bearbeiten">
+                                                <MdEdit className="size-4" />
+                                            </Button>
+                                            <Button onClick={() => onDelete(entry.id)} size="xs" color="red" title="Löschen">
+                                                <MdDelete className="size-4" />
+                                            </Button>
+                                        </ButtonGroup>
+                                    </TableCell>
+                                )}
                             </TableRow>
                         ))}
                         {sorted.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={showUnit ? 6 : 5} className="text-center">
+                                <TableCell colSpan={columns} className="text-center">
                                     Keine Buchungen gefunden.
                                 </TableCell>
                             </TableRow>
@@ -158,35 +151,40 @@ function EntryTable({entries, showUnit = true, alwaysPaginate = false}) {
     );
 }
 
-function BookEntries({entries}) {
+function BookEntries({entries, onNew, onEdit, onDelete}) {
     const [filter, setFilter] = useState('');
     const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
     return (
         <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
-                <TextInput className="grow" type="search" icon={MdSearch} placeholder="Buchungen filtern …" aria-label="Buchungen filtern" value={filter} onChange={(e) => setFilter(e.target.value)} />
+                <FlowbiteTextInput
+                    className="grow"
+                    type="search"
+                    icon={MdSearch}
+                    placeholder="Buchungen filtern …"
+                    aria-label="Buchungen filtern"
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                />
                 <div className="shrink-0 text-sm whitespace-nowrap">
                     Kassenstand: <span className={`font-semibold tabular-nums ${amountColor(total)}`}>{formatAmount(total)}</span>
                 </div>
-                <Button className="shrink-0">
+                <Button className="shrink-0" onClick={onNew}>
                     <MdAdd className="mr-2 h-5 w-5" />
                     Neu
                 </Button>
             </div>
-            <EntryTable key={filter} entries={entries.filter((entry) => matches(entry, filter))} />
+            <EntryTable key={filter} entries={entries.filter((entry) => matches(entry, filter))} onEdit={onEdit} onDelete={onDelete} />
         </div>
     );
 }
 
-function entriesOf(book) {
-    return dummyBooks.find((dummy) => dummy.name === book.name)?.entries ?? [];
-}
-
-function UnitOverview({show, onClose}) {
-    const [unit, setUnit] = useState(units[0]);
-    const entries = dummyBooks.flatMap((book) => book.entries).filter((entry) => entry.unit === unit);
-    const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
+function UnitOverview({show, onClose, units, entries}) {
+    const [selected, setSelected] = useState(null);
+    const unitId = selected ?? units[0]?.id;
+    const unitEntries = entries.filter((entry) => entry.unitId === unitId);
+    const total = unitEntries.reduce((sum, entry) => sum + entry.amount, 0);
 
     return (
         <Modal show={show} onClose={onClose} size="4xl" dismissible>
@@ -198,9 +196,11 @@ function UnitOverview({show, onClose}) {
                             <Label htmlFor="overview-unit" className="mb-2 block">
                                 Kostenstelle
                             </Label>
-                            <Select id="overview-unit" value={unit} onChange={(e) => setUnit(e.target.value)}>
-                                {units.map((name) => (
-                                    <option key={name}>{name}</option>
+                            <Select id="overview-unit" value={unitId ?? ''} onChange={(e) => setSelected(Number(e.target.value))}>
+                                {units.map((unit) => (
+                                    <option key={unit.id} value={unit.id}>
+                                        {unit.name}
+                                    </option>
                                 ))}
                             </Select>
                         </div>
@@ -209,30 +209,156 @@ function UnitOverview({show, onClose}) {
                             <div className={`text-2xl font-semibold whitespace-nowrap tabular-nums ${amountColor(total)}`}>{formatAmount(total)}</div>
                         </div>
                     </div>
-                    <EntryTable key={unit} entries={entries} showUnit={false} alwaysPaginate />
+                    <EntryTable key={unitId} entries={unitEntries} showUnit={false} alwaysPaginate />
                 </div>
             </ModalBody>
         </Modal>
     );
 }
 
+const emptyForm = {date: '', description: '', bookId: null, unitId: '', categoryId: '', amount: '', receiptNumber: ''};
+
+function fetchData(path) {
+    return apiFetch(path)
+        .then((response) => (response.ok ? response.json() : Promise.reject(response)))
+        .then((data) => data.data);
+}
+
 export default function EntryPage() {
     const [books, setBooks] = useState(null);
+    const [units, setUnits] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [rawEntries, setRawEntries] = useState([]);
     const [overviewOpen, setOverviewOpen] = useState(false);
+    const [modal, setModal] = useState(false);
+    const [form, setForm] = useState(emptyForm);
+    const [errors, setErrors] = useState({});
+    const {confirm} = useDialog();
 
     useEffect(() => {
-        apiFetch('/book')
-            .then((response) => (response.ok ? response.json() : Promise.reject(response)))
-            .then((data) => setBooks(data.data));
+        Promise.all([fetchData('/book'), fetchData('/unit'), fetchData('/category'), fetchData('/entry')]).then(([books, units, categories, entries]) => {
+            setUnits(units);
+            setCategories(categories);
+            setRawEntries(entries);
+            setBooks(books);
+        });
     }, []);
+
+    const entries = rawEntries.map((entry) => ({
+        ...entry,
+        unit: units.find((unit) => unit.id === entry.unitId) ?? null,
+        category: categories.find((category) => category.id === entry.categoryId) ?? null,
+    }));
+
+    function newEntry(book) {
+        setForm({...emptyForm, bookId: book.id, date: today()});
+        setModal(true);
+    }
+
+    function editEntry(entry) {
+        setForm({
+            id: entry.id,
+            date: entry.date,
+            description: entry.description,
+            bookId: entry.bookId,
+            unitId: entry.unitId ?? '',
+            categoryId: entry.categoryId,
+            amount: (entry.amount / 100).toFixed(2).replace('.', ','),
+            receiptNumber: entry.receiptNumber ?? '',
+        });
+        setModal(true);
+    }
+
+    function closeModal() {
+        setModal(false);
+        setForm(emptyForm);
+        setErrors({});
+    }
+
+    async function save() {
+        const body = JSON.stringify({
+            date: form.date,
+            description: form.description,
+            bookId: form.bookId,
+            unitId: form.unitId === '' ? null : Number(form.unitId),
+            categoryId: form.categoryId === '' ? null : Number(form.categoryId),
+            amount: parseAmount(form.amount),
+            receiptNumber: form.receiptNumber,
+        });
+        const res = form.id
+            ? await apiFetch(`/entry/${form.id}`, {method: 'PUT', body, headers: {'Content-Type': 'application/json'}})
+            : await apiFetch('/entry', {method: 'POST', body, headers: {'Content-Type': 'application/json'}});
+
+        if (!res.ok) {
+            const error = await res.json();
+            if (error.fieldErrors) {
+                setErrors(error.fieldErrors);
+            }
+            return;
+        }
+
+        setRawEntries((await res.json()).data);
+        closeModal();
+    }
+
+    async function deleteEntry(id) {
+        await confirm('Buchung löschen', 'Möchten Sie diese Buchung wirklich löschen?');
+        const res = await apiFetch(`/entry/${id}`, {method: 'DELETE'});
+        setRawEntries((await res.json()).data);
+    }
 
     return (
         <div className="relative">
+            <Modal dismissible show={modal} onClose={() => closeModal()}>
+                <ModalHeader>{form.id ? 'Buchung bearbeiten' : 'Neue Buchung'}</ModalHeader>
+                <ModalBody>
+                    {Object.keys(errors).length !== 0 && (
+                        <Alert color="failure" className="mb-4" onDismiss={() => setErrors({})}>
+                            {Object.keys(errors).map((key) => (
+                                <p key={key}>{errors[key].join(' ')}</p>
+                            ))}
+                        </Alert>
+                    )}
+                    <form className="flex max-w-md flex-col gap-4">
+                        <TextInput id="date" type="date" label="Datum" required value={form.date} onChange={(e) => setForm({...form, date: e.target.value})} />
+                        <TextInput id="description" label="Beschreibung" required value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} />
+                        <SelectInput id="unitId" label="Kostenstelle" value={form.unitId} onChange={(e) => setForm({...form, unitId: e.target.value})}>
+                            <option value="">Keine Kostenstelle</option>
+                            {units.map((unit) => (
+                                <option key={unit.id} value={unit.id}>
+                                    {unit.name}
+                                </option>
+                            ))}
+                        </SelectInput>
+                        <SelectInput id="categoryId" label="Konto" required value={form.categoryId} onChange={(e) => setForm({...form, categoryId: e.target.value})}>
+                            <option value="">Bitte wählen</option>
+                            {categories.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
+                                </option>
+                            ))}
+                        </SelectInput>
+                        <TextInput
+                            id="amount"
+                            label="Betrag in € (Ausgaben mit Minus)"
+                            placeholder="-12,50"
+                            required
+                            value={form.amount}
+                            onChange={(e) => setForm({...form, amount: e.target.value})}
+                        />
+                        <TextInput id="receiptNumber" label="Quittungs-Nr" value={form.receiptNumber} onChange={(e) => setForm({...form, receiptNumber: e.target.value})} />
+                    </form>
+                </ModalBody>
+                <ModalFooter>
+                    <Button onClick={() => save()}>Speichern</Button>
+                </ModalFooter>
+            </Modal>
+
             {books?.length > 0 && (
                 <Tabs aria-label="Kassen" variant="underline">
                     {books.map((book) => (
                         <TabItem key={book.id} title={book.name}>
-                            <BookEntries entries={entriesOf(book)} />
+                            <BookEntries entries={entries.filter((entry) => entry.bookId === book.id)} onNew={() => newEntry(book)} onEdit={editEntry} onDelete={deleteEntry} />
                         </TabItem>
                     ))}
                 </Tabs>
@@ -241,7 +367,7 @@ export default function EntryPage() {
             <Button size="sm" color="alternative" className="absolute top-2 right-0" onClick={() => setOverviewOpen(true)}>
                 Kostenstellen-Übersicht
             </Button>
-            <UnitOverview show={overviewOpen} onClose={() => setOverviewOpen(false)} />
+            <UnitOverview show={overviewOpen} onClose={() => setOverviewOpen(false)} units={units} entries={entries} />
         </div>
     );
 }

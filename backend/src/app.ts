@@ -5,6 +5,7 @@ import {env} from './env.ts';
 import {authRouter} from './routes/auth.ts';
 import {bookRouter} from './routes/book.ts';
 import {categoryRouter} from './routes/category.ts';
+import {entryRouter} from './routes/entry.ts';
 import {unitRouter} from './routes/unit.ts';
 
 const app = express();
@@ -20,6 +21,7 @@ app.use(authRouter);
 app.use('/book', bookRouter);
 app.use('/category', categoryRouter);
 app.use('/unit', unitRouter);
+app.use('/entry', entryRouter);
 
 await connectDb();
 

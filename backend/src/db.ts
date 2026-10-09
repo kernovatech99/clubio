@@ -23,13 +23,20 @@ export async function closeDb() {
 }
 
 export async function dropAllTables() {
-    const [rows] = await connection.query<RowDataPacket[]>("select table_name as name from information_schema.tables where table_schema = database() and table_type = 'BASE TABLE'");
+    // Eine feste Verbindung, da foreign_key_checks nur für die jeweilige Session gilt
+    const conn = await connection.getConnection();
 
-    await connection.query('set foreign_key_checks = 0');
+    try {
+        const [rows] = await conn.query<RowDataPacket[]>("select table_name as name from information_schema.tables where table_schema = database() and table_type = 'BASE TABLE'");
 
-    for (const {name} of rows) {
-        await connection.query('DROP TABLE ' + name);
+        await conn.query('set foreign_key_checks = 0');
+
+        for (const {name} of rows) {
+            await conn.query('DROP TABLE ' + name);
+        }
+
+        await conn.query('set foreign_key_checks = 1');
+    } finally {
+        conn.release();
     }
-
-    await connection.query('set foreign_key_checks = 1');
 }

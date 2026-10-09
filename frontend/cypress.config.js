@@ -11,6 +11,7 @@ export default defineConfig({
                 'db:createBook': async (book) => await dbManager.createBook(book),
                 'db:createCategory': async (category) => await dbManager.createCategory(category),
                 'db:createUnit': async (unit) => await dbManager.createUnit(unit),
+                'db:seedEntries': async (data) => await dbManager.seedEntries(data),
             });
             on('after:run', () => dbManager.close());
         },
