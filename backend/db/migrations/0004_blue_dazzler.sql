@@ -1,0 +1,1 @@
+ALTER TABLE `entry` RENAME COLUMN `checked` TO `reviewed`;

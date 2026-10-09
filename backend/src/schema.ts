@@ -67,7 +67,7 @@ export const entries = mysqlTable('entry', {
     // Betrag in Cent, Ausgaben sind negativ
     amount: int().notNull(),
     receiptNumber: varchar('receipt_number', {length: 255}),
-    checked: boolean().notNull().default(false),
+    reviewed: boolean().notNull().default(false),
     createdAt: datetime('created_at')
         .notNull()
         .$defaultFn(() => new Date()),

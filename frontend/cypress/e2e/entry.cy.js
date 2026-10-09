@@ -101,7 +101,7 @@ describe('Entries', () => {
         rows()
             .first()
             .within(() => {
-                cy.get('[aria-label="Nicht geprüft"]').should('be.visible');
+                cy.get('[aria-label="Als geprüft markieren"]').should('be.visible');
                 cy.contains('01.10.2026').should('be.visible');
                 cy.contains('Miete Vereinsheim Oktober').should('be.visible');
                 cy.contains('td', /^Vereinsheim$/)
@@ -117,7 +117,7 @@ describe('Entries', () => {
         rows()
             .eq(1)
             .within(() => {
-                cy.get('[aria-label="Nicht geprüft"]').should('be.visible');
+                cy.get('[aria-label="Als geprüft markieren"]').should('be.visible');
                 cy.contains('18.09.2026').should('be.visible');
                 cy.contains('Spende Familie Becker').should('be.visible');
                 cy.contains(/^100,00\s€$/)
@@ -258,7 +258,7 @@ describe('Entries', () => {
         rows()
             .first()
             .within(() => {
-                cy.get('[aria-label="Nicht geprüft"]').should('be.visible');
+                cy.get('[aria-label="Als geprüft markieren"]').should('be.visible');
                 cy.contains('05.10.2026').should('be.visible');
                 cy.contains('Laternen basteln').should('be.visible');
                 cy.contains('td', /^Gruppenstunden$/).should('be.visible');
@@ -357,6 +357,35 @@ describe('Entries', () => {
 
         sendForm({date: '2026-09-18', description: 'Spende Familie Becker', category: 'Spenden', amount: '0'});
         cy.contains('Betrag darf nicht 0 sein').should('be.visible');
+    });
+
+    it('marks an entry as reviewed', () => {
+        cy.contains('Spende Familie Becker').closest('tr').find('[aria-label="Als geprüft markieren"]').click();
+
+        cy.contains('Spende Familie Becker')
+            .closest('tr')
+            .within(() => {
+                cy.get('[aria-label="Geprüft"]').should('be.visible').and('have.class', 'bg-green-500').find('svg').should('be.visible');
+                cy.get('[aria-label="Als geprüft markieren"]').should('not.exist');
+                cy.get('button[aria-label="Geprüft"]').should('not.exist');
+                cy.get('[title="Bearbeiten"]').should('not.exist');
+                cy.get('[title="Löschen"]').should('not.exist');
+            });
+        // Die anderen Buchungen bleiben unberührt
+        rows().first().find('[aria-label="Als geprüft markieren"]').should('be.visible');
+
+        cy.visit('/entry');
+        openBook('Girokonto');
+        cy.contains('Spende Familie Becker').closest('tr').find('[aria-label="Geprüft"]').should('be.visible');
+    });
+
+    it('cannot change the reviewed state in the kostenstellen overview', () => {
+        cy.contains('button', 'Kostenstellen-Übersicht').click();
+
+        dialog().within(() => {
+            cy.get('[aria-label="Nicht geprüft"]').should('exist');
+            cy.get('[aria-label="Als geprüft markieren"]').should('not.exist');
+        });
     });
 
     it('removes an entry', () => {

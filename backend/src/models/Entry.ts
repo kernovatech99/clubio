@@ -42,4 +42,9 @@ export const entryRepository = {
 
         return (await this.findById(id))!;
     },
+
+    // Eine geprüfte Buchung bleibt geprüft, daher gibt es keinen Weg zurück.
+    async review(id: number): Promise<void> {
+        await db.update(entries).set({reviewed: true}).where(eq(entries.id, id));
+    },
 };

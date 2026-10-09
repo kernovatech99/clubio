@@ -55,3 +55,8 @@ entryRouter.put('/:id', useInputValidation, async (req, res) => {
     await entryRepository.update(req.params.id, req.body);
     res.json({data: await entryRepository.all()});
 });
+
+entryRouter.put('/:id/review', async (req, res) => {
+    await entryRepository.review(req.params.id);
+    res.json({data: await entryRepository.all()});
+});

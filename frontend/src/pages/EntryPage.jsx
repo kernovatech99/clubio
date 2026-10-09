@@ -62,20 +62,33 @@ function amountColor(amount) {
     return amount < 0 ? 'text-red-400' : 'text-green-400';
 }
 
-function CheckedMark({checked}) {
-    if (!checked) {
+// Ohne onReview oder sobald die Buchung geprüft ist, lässt sich der Status nicht mehr ändern.
+function ReviewedMark({reviewed, onReview}) {
+    if (reviewed) {
+        return (
+            <span role="img" aria-label="Geprüft" title="Geprüft" className="flex size-6 items-center justify-center rounded-full bg-green-500 text-white">
+                <MdCheck className="size-4" />
+            </span>
+        );
+    }
+
+    if (!onReview) {
         return <span role="img" aria-label="Nicht geprüft" title="Nicht geprüft" className="block size-6 rounded-full border-2 border-gray-500" />;
     }
 
     return (
-        <span role="img" aria-label="Geprüft" title="Geprüft" className="flex size-6 items-center justify-center rounded-full bg-green-500 text-white">
-            <MdCheck className="size-4" />
-        </span>
+        <button
+            type="button"
+            onClick={onReview}
+            aria-label="Als geprüft markieren"
+            title="Als geprüft markieren"
+            className="block size-6 cursor-pointer rounded-full border-2 border-gray-500 hover:border-green-500"
+        />
     );
 }
 
 // Beim Wechsel der angezeigten Buchungen per key neu mounten, damit die Seite wieder auf 1 steht.
-function EntryTable({entries, showUnit = true, alwaysPaginate = false, onEdit, onDelete}) {
+function EntryTable({entries, showUnit = true, alwaysPaginate = false, onEdit, onDelete, onReview}) {
     const showActions = !!onEdit;
     const columns = 4 + (showUnit ? 1 : 0) + (showActions ? 1 : 0);
     const [page, setPage] = useState(1);
@@ -102,7 +115,7 @@ function EntryTable({entries, showUnit = true, alwaysPaginate = false, onEdit, o
                         {visible.map((entry) => (
                             <TableRow key={entry.id}>
                                 <TableCell>
-                                    <CheckedMark checked={entry.checked} />
+                                    <ReviewedMark reviewed={entry.reviewed} onReview={onReview && (() => onReview(entry.id))} />
                                 </TableCell>
                                 <TableCell className="whitespace-nowrap tabular-nums">{formatDate(entry.date)}</TableCell>
                                 <TableCell className="font-medium text-white">{entry.description}</TableCell>
@@ -120,14 +133,16 @@ function EntryTable({entries, showUnit = true, alwaysPaginate = false, onEdit, o
                                 <TableCell className={`text-right whitespace-nowrap tabular-nums ${amountColor(entry.amount)}`}>{formatAmount(entry.amount)}</TableCell>
                                 {showActions && (
                                     <TableCell className="text-right">
-                                        <ButtonGroup>
-                                            <Button onClick={() => onEdit(entry)} size="xs" color="alternative" title="Bearbeiten">
-                                                <MdEdit className="size-4" />
-                                            </Button>
-                                            <Button onClick={() => onDelete(entry.id)} size="xs" color="red" title="Löschen">
-                                                <MdDelete className="size-4" />
-                                            </Button>
-                                        </ButtonGroup>
+                                        {!entry.reviewed && (
+                                            <ButtonGroup>
+                                                <Button onClick={() => onEdit(entry)} size="xs" color="alternative" title="Bearbeiten">
+                                                    <MdEdit className="size-4" />
+                                                </Button>
+                                                <Button onClick={() => onDelete(entry.id)} size="xs" color="red" title="Löschen">
+                                                    <MdDelete className="size-4" />
+                                                </Button>
+                                            </ButtonGroup>
+                                        )}
                                     </TableCell>
                                 )}
                             </TableRow>
@@ -151,7 +166,7 @@ function EntryTable({entries, showUnit = true, alwaysPaginate = false, onEdit, o
     );
 }
 
-function BookEntries({entries, onNew, onEdit, onDelete}) {
+function BookEntries({entries, onNew, onEdit, onDelete, onReview}) {
     const [filter, setFilter] = useState('');
     const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
@@ -175,7 +190,7 @@ function BookEntries({entries, onNew, onEdit, onDelete}) {
                     Neu
                 </Button>
             </div>
-            <EntryTable key={filter} entries={entries.filter((entry) => matches(entry, filter))} onEdit={onEdit} onDelete={onDelete} />
+            <EntryTable key={filter} entries={entries.filter((entry) => matches(entry, filter))} onEdit={onEdit} onDelete={onDelete} onReview={onReview} />
         </div>
     );
 }
@@ -307,6 +322,11 @@ export default function EntryPage() {
         setRawEntries((await res.json()).data);
     }
 
+    async function reviewEntry(id) {
+        const res = await apiFetch(`/entry/${id}/review`, {method: 'PUT'});
+        setRawEntries((await res.json()).data);
+    }
+
     return (
         <div className="relative">
             <Modal dismissible show={modal} onClose={() => closeModal()}>
@@ -358,7 +378,7 @@ export default function EntryPage() {
                 <Tabs aria-label="Kassen" variant="underline">
                     {books.map((book) => (
                         <TabItem key={book.id} title={book.name}>
-                            <BookEntries entries={entries.filter((entry) => entry.bookId === book.id)} onNew={() => newEntry(book)} onEdit={editEntry} onDelete={deleteEntry} />
+                            <BookEntries entries={entries.filter((entry) => entry.bookId === book.id)} onNew={() => newEntry(book)} onEdit={editEntry} onDelete={deleteEntry} onReview={reviewEntry} />
                         </TabItem>
                     ))}
                 </Tabs>
